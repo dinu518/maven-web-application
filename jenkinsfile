@@ -1,0 +1,33 @@
+node{
+
+//define maven path
+def mavenHome = tool name: "maven3.8.5"
+
+//Checkout Stage
+ stage('CheckoutCode'){
+ git branch: 'development', credentialsId: 'd8e88019-57bb-407d-be70-d5a155141d17', url: 'https://github.com/dinu518/maven-web-application.git'
+ }
+ 
+ //Build Stage
+ stage('Build'){
+ sh "$mavenHome/bin/mvn clean package"
+ }
+ //Generate Sonar Qube Report
+ stage('sonarQubeReport'){
+ sh "$mavenHome/bin/mvn sonar:sonar"
+ }
+ 
+ //Upload Artifact into Artifactoru repo
+ stage('UploadArtifactsIntoNexus'){
+ sh "$mavenHome/bin/mvn deploy"
+ }
+ 
+ //Deplo App into Tomcat Server
+ stage('DepployAppIntoTomcat'){
+ sshagent(['a5a86e6c-ea20-4726-b55a-d1c0aa77835a']) {
+  sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@172.31.38.5:/opt/apache-tomcat-9.0.59/webapps"
+}
+
+}
+ 
+ }
